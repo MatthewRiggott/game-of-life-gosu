@@ -20,6 +20,12 @@ class Cells
     return @living.empty
   end
 
+  def clear_board
+    @alive.each {|row| row.each {|cell| cell == false}}
+  end
+
+
+
   def make_babies
 
     @future = Array.new(@col_size + 2) { |i| Array.new(@row_size + 2) { |i| 0 } }
@@ -32,13 +38,24 @@ class Cells
       (1..col_size).each_with_index do |col|
         (1..row_size).each_with_index do |row|
           case @future[col][row]
+
           when 0..1
-            @grid[col][row] = false
+            if alive[col][row]
+              @living.delete([col, row])
+              @alive[col][row] = false
+            end
+
           when 2
           when 3
-            @grid[col][row] = true
+            if !alive[col][row]
+              @living << [col,row]
+              @alive[col][row] = true
+            end
           when 4..10
-            @grid[col][row] = false
+            if @alive[col][row]
+              @living.delete([col, row])
+              @alive[col][row] = false
+            end
           end
         end
       end

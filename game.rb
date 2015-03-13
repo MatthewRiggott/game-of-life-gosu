@@ -14,6 +14,7 @@ class Life < Gosu::Window
     @grid = Cells.new(25, 25)
     @state = :building
     @large_font = Gosu::Font.new(self, "Arial", SCREEN_HEIGHT / 20)
+    @interval = 0.0
   end
 
   def draw
@@ -31,20 +32,30 @@ class Life < Gosu::Window
 
   end
 
+  def iteration_time(time_second=0)
+    t = (time_second > 0) ? time_second : 0
+    sleep(t)
+    @grid.make_babies
+  end
+
   def button_down(key)
     case key
     when Gosu::MsLeft
       if @state == :building
         row, col = get_coords(mouse_x, mouse_y)
-
         @grid.toggle(row, col)
       end
     when Gosu::KbEscape
       close
+    when Gosu::KbLeft
+      @interval -= 0.1 unless @interval == 0
+    when Gosu::KbRight
+      @interval += 0.1
     when Gosu::KbSpace
       if @state == :building
         @state = :running
       else
+        @grid.clear_board
         @state = :building
       end
     end
@@ -55,7 +66,7 @@ class Life < Gosu::Window
   end
 
   def update
-    @grid.make_babies if @state == :running
+    iteration_time(@interval) if @state == :running
   end
 
   def draw_text(row, col, text, font, color)
