@@ -1,7 +1,7 @@
 require 'pry'
 
 class Cells
-  attr_reader :col_size, :row_size, :alive
+  attr_reader :col_size, :row_size, :alive, :living
   def initialize(col_size, row_size)
     @col_size = col_size
     @row_size = row_size
@@ -22,12 +22,10 @@ class Cells
 
   def clear_board
     @alive.each {|row| row.each {|cell| cell == false}}
+    @living = []
   end
 
-
-
-  def make_babies
-
+  def propagate
     @future = Array.new(@col_size + 2) { |i| Array.new(@row_size + 2) { |i| 0 } }
     if !@living.empty?
       @living.each do |xy|

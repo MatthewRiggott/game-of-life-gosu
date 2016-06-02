@@ -12,22 +12,20 @@ class Life < Gosu::Window
     @background = Gosu::Image.new(self, 'field.png')
     @cell = Gosu::Image.new(self, 'cell.png')
     @grid = Cells.new(25, 25)
+    @zoom = 0
     @state = :building
     @large_font = Gosu::Font.new(self, "Arial", SCREEN_HEIGHT / 20)
     @interval = 0.0
   end
 
   def draw
-    @background.draw(0, 0, 0, SCREEN_WIDTH/@background.width, SCREEN_HEIGHT/@background.height)
-    (1..@grid.row_size).each do |i|
-      (1..@grid.col_size).each do |j|
-
-        draw_cell(i, j) if @grid.alive[i][j]
-      end
+    @background.draw(0, 0, 0, (SCREEN_WIDTH/@background.width)*1.1, (SCREEN_HEIGHT/@background.height)*1.1)
+    @grid.living.each do |cell|
+      draw_cell(cell[0],cell[1])
     end
 
     if @state == :dead
-      draw_text(10, 10, "Er'body dead - space to start over", @large_font, 0xfffd7e005) if @grid.alive[i][j]
+      draw_text(2, 10, "No more cells living, space to repopulate.", @large_font, 0xfffd7e005)
     end
 
   end
@@ -35,7 +33,7 @@ class Life < Gosu::Window
   def iteration_time(time_second=0)
     t = (time_second > 0) ? time_second : 0
     sleep(t)
-    @grid.make_babies
+    @grid.propagate
   end
 
   def button_down(key)
@@ -45,19 +43,32 @@ class Life < Gosu::Window
         row, col = get_coords(mouse_x, mouse_y)
         @grid.toggle(row, col)
       end
+
     when Gosu::KbEscape
       close
+
     when Gosu::KbLeft
       @interval -= 0.1 unless @interval == 0
     when Gosu::KbRight
       @interval += 0.1
+
     when Gosu::KbSpace
       if @state == :building
         @state = :running
       else
-        @grid.clear_board
         @state = :building
       end
+
+    when Gosu::KbUp
+      @zoom += 1 unless @zoom == zoom_level.size - 1
+    when Gosu::KbDown
+      @zoom -= 1 unless @zoom == 0
+
+    when Gosu::KbC
+      if @state == :running
+        @state = :building
+      end
+      @grid.clear_board
     end
   end
 
@@ -66,7 +77,17 @@ class Life < Gosu::Window
   end
 
   def update
-    iteration_time(@interval) if @state == :running
+    if @state == :running
+      iteration_time(@interval)
+      @state = :dead if @grid.living.empty?
+    end
+  end
+
+  def zoom_level
+    #cell needs grid to be accessible.  Expand the boundaries of cell.
+    #overwrite current grid -> center of new bounds.
+    #25  30  40   50   62   125
+    [1, 0.8, 0.6, 0.5, 0.4, 0.2]
   end
 
   def draw_text(row, col, text, font, color)
@@ -76,8 +97,7 @@ class Life < Gosu::Window
 
   def draw_cell(row, col)
     coords = coords_to_px(row, col)
-    @cell.draw(coords[0], coords[1], 1, 0.45, 0.45)
-
+    @cell.draw(coords[0], coords[1], 1, 0.9*zoom_level[@zoom], 0.9*zoom_level[@zoom])
   end
 
   def width
